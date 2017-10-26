@@ -1,4 +1,4 @@
-# rancher-ssh
+# Rancher SSH
 
 SSH into your Rancher Host using Rancher CLI
 
