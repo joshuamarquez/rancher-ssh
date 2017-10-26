@@ -5,7 +5,7 @@ SSH into your Rancher Host using Rancher CLI
 ## Install
 
 ```
-$ sudo curl -o /usr/local/bin/rssh -L "https://github.com/joshuamarquez/rancher-ssh/releases/download/1.0.0/rssh"
+$ sudo curl -o /usr/local/bin/rssh -L "https://github.com/joshuamarquez/rancher-ssh/releases/download/1.1.0/rssh"
 $ sudo chmod +x /usr/local/bin/rssh
 ```
 
