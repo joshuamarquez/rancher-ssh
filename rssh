@@ -1,0 +1,55 @@
+#!/bin/bash
+
+if [ -z "$(command -v rancher)" ]; then
+    echo "Rancher CLI must be installed"
+    exit 0
+fi
+
+if [[ ! $1 =~ ^(.+)@(.+)$ ]]; then
+    echo "Make sure 'username@hostname' is provided!"
+    exit 1
+fi
+
+USERNAME=$(awk -F'[@]' '{print $1}' <<< $1)
+HOSTNAME=$(awk -F'[@]' '{print $2}' <<< $1)
+
+echo "Looking host with name $HOSTNAME..."
+
+HOST=$(rancher host --format '{{.ID}} {{.Host.Hostname}} {{.State}}' | grep -w "$HOSTNAME")
+HOST_ID=$(awk '{print $1}' <<< "$HOST")
+HOST_STATE=$(awk '{print $3}' <<< "$HOST")
+
+if [ -z "$HOST_ID" ]; then
+    echo "Host NOT found"
+    exit 1
+fi
+
+if [ "$HOST_STATE" == "disconnected" ]; then
+    echo "Host is disconnected!"
+    exit 1
+else
+    echo "Host $HOSTNAME with ID $HOST_ID is available!"
+fi
+
+echo "Lookig for container bridge..."
+
+CONTAINERS=$(rancher --host $HOST_ID docker ps --quiet)
+
+while read -r CONTAINER; do
+    rancher --host $HOST_ID docker exec $CONTAINER ssh
+    if [ $? -eq 255 ]; then
+        CONTAINER=$CONTAINER
+        break
+    fi
+done <<< "$CONTAINERS"
+
+if [ -z "$CONTAINER" ]; then
+    echo "Container bridge could not be found!"
+    exit 1
+fi
+
+echo "Getting docker host IP..."
+
+HOST_IP=$(rancher --host $HOST_ID docker exec -i $CONTAINER ip route show | grep "default" | awk '{print $3}')
+
+rancher --host $HOST_ID docker exec -it $CONTAINER ssh -o StrictHostKeyChecking=no ${USERNAME}@${HOST_IP}
