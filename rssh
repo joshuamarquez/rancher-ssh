@@ -46,10 +46,23 @@ done <<< "$CONTAINERS"
 if [ -z "$CONTAINER" ]; then
     echo "Container bridge could not be found!"
     exit 1
+else
+    echo "Container bridge with ID $CONTAINER found!"
+fi
+
+echo "Lookig for container agent..."
+
+CONTAINER_AGENT=$(rancher --host $HOST_ID docker ps --format "table {{.ID}} {{.Image}}"  | grep -w rancher/agent | awk '{print $1}')
+
+if [ -z "$CONTAINER_AGENT" ]; then
+    echo "Container agent could not be found!"
+    exit 1
+else
+    echo "Container agent with ID $CONTAINER_AGENT found!"
 fi
 
 echo "Getting docker host IP..."
 
-HOST_IP=$(rancher --host $HOST_ID docker exec -i $CONTAINER ip route show | grep "default" | awk '{print $3}')
+HOST_IP=$(rancher --host $HOST_ID docker exec -i $CONTAINER_AGENT ip route show | grep -w "docker0" | awk '{print $NF}')
 
 rancher --host $HOST_ID docker exec -it $CONTAINER ssh -o StrictHostKeyChecking=no ${USERNAME}@${HOST_IP}
